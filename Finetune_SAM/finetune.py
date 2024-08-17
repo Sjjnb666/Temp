@@ -18,7 +18,7 @@ mask_folder = "path_to_your_mask_folder/"
 test_image_folder = "path_to_your_test_image_folder/"
 test_mask_folder = "path_to_your_test_mask_folder/"
 
-def get_data(image_folder, mask_folder, test_image_folder, test_mask_folder):
+def get_data(image_folder, mask_folder, test_image_folder, test_mask_folder, processor_name = "sam_base_vit"):
     large_images = load_image_stack(image_folder)
     test_large_images = load_image_stack(test_image_folder)
     large_masks = load_mask_stack(mask_folder)
@@ -35,7 +35,7 @@ def get_data(image_folder, mask_folder, test_image_folder, test_mask_folder):
     dataset = make_dict(filtered_images, filtered_masks)
     test_dataset = make_dict(test_filtered_images, test_filtered_masks)
     
-    processor = SamProcessor.from_pretrained("/home/songjiajie/sam_base_vit")
+    processor = SamProcessor.from_pretrained(processor_name)
     # Create an instance of the SAMDataset
     train_dataset = SAMDataset(dataset=dataset, processor=processor)
     test_dataset = SAMDataset(dataset=test_dataset,processor=processor)
