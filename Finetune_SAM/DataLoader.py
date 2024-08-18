@@ -72,7 +72,6 @@ def read_images_and_masks(image_folder, mask_folder):
 
 # Define a function to load images from a directory and resize and stack them into numpy arrays
 def load_image_stack(directory, target_size=None, convert_to_rgb=True):
-    # 获取排序后的文件列表
     files = sorted([os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.png')])
     
     images = []
