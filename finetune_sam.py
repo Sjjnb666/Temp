@@ -1,4 +1,4 @@
-from DataLoader import *
+from Finetune_SAM.DataLoader import *
 from transformers import SamProcessor
 from torch.utils.data import DataLoader
 from transformers import SamModel
