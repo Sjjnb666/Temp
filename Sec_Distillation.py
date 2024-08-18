@@ -1,7 +1,7 @@
-from Loss_Metrics import *
-from Discriminator import *
-from DataLoader import *
-from SegNet_res18 import *
+from Secondary_Distillation.Loss_Metrics import *
+from Secondary_Distillation.Discriminator import *
+from Secondary_Distillation.DataLoader import *
+from Secondary_Distillation.SegNet_res18 import *
 from transformers import SamProcessor
 from transformers import SamModel
 import os
