@@ -8,6 +8,8 @@ test_mask_folder : "path_to_your_test_mask_folder/"
 
 num_epochs : 100
 
+process_name : "sam_base_vit"
+
 sam_model_name : "sam_base_vit"
 
 sam_weight : 'path_to_your_weight/'
@@ -15,3 +17,19 @@ sam_weight : 'path_to_your_weight/'
 batch_size : 2
 
 lr : 1e-5
+
+height : 1024
+
+width : 1024
+
+output_height : 256
+
+output_width : 256
+
+num_classes : 2
+
+in_channel : 1
+
+pretrain_epochs : 100
+
+gan_train_epochs : 100
