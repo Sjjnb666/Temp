@@ -12,13 +12,16 @@ import torch
 from torch.nn.functional import threshold, normalize
 import numpy as np
 from torchmetrics.classification import BinaryAUROC
+import yaml
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
-image_folder = "path_to_your_image_folder/"
-mask_folder = "path_to_your_mask_folder/"
-test_image_folder = "path_to_your_test_image_folder/"
-test_mask_folder = "path_to_your_test_mask_folder/"
+image_folder = config['image_folder']
+mask_folder = config['mask_folder']
+test_image_folder = config['test_image_folder']
+test_mask_folder = config['test_mask_folder']
 
-def get_data(image_folder, mask_folder, test_image_folder, test_mask_folder):
+def get_data(image_folder, mask_folder, test_image_folder, test_mask_folder,process_name="sam_base_vit"):
     large_images = load_image_stack(image_folder)
     test_large_images = load_image_stack(test_image_folder)
     large_masks = load_mask_stack(mask_folder)
@@ -35,7 +38,7 @@ def get_data(image_folder, mask_folder, test_image_folder, test_mask_folder):
     dataset = make_dict(filtered_images, filtered_masks)
     test_dataset = make_dict(test_filtered_images, test_filtered_masks)
     
-    processor = SamProcessor.from_pretrained("/home/songjiajie/sam_base_vit")
+    processor = SamProcessor.from_pretrained(process_name)
     # Create an instance of the SAMDataset
     train_dataset = SAMDataset(dataset=dataset, processor=processor)
     test_dataset = SAMDataset(dataset=test_dataset,processor=processor)
@@ -53,11 +56,15 @@ def get_model(lr = 1e-5,model_name = "sam_base_vit",weight = None):
         
 
 
+process_name = config['process_name']
+batch_size = config['batch_size']
+lr = config['lr']
+model_name = config['sam_model_name']
+weight = config['sam_weight']
+train_dataloader, test_dataloader = get_data(image_folder=image_folder, mask_folder=mask_folder, test_image_folder=test_image_folder, test_mask_folder=test_mask_folder,process_name=process_name,batch=batch_size)
+model = get_model(lr = 1e-5,model_name = model_name,weight = weight)
 
-train_dataloader, test_dataloader = get_data(image_folder, mask_folder, test_image_folder, test_mask_folder)
-model = get_model(lr = 1e-5,model_name = "sam_base_vit",weight = 'path_to_your_weight/')
-
-optimizer = Adam(model.parameters(), lr=1e-5)
+optimizer = Adam(model.parameters(), lr=lr)
 seg_loss = monai.losses.DiceCELoss(sigmoid=True, squared_pred=True, reduction='mean')
 
 # Function to calculate IoU
@@ -99,7 +106,7 @@ def calculate_metrics_gpu(preds, targets):
     return accuracy.item(), recall.item(), precision.item(), f1.item(), iou.item(), dice.item(), auc.item()
 
 # Training loop
-num_epochs = 100
+num_epochs = config['num_epochs']
 tmp = 0.9050
 
 device = "cuda:1" if torch.cuda.is_available() else "cpu"
