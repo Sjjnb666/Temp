@@ -22,20 +22,23 @@ from scipy import ndimage
 import cv2
 from torch.nn import SyncBatchNorm
 from torchvision.models import resnet50
+import yaml
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
-height = 1024
-width = 1024
-output_height = 256
-output_width = 256
-num_classes = 2
-batch_size = 2
-lr = 1e-5
+height = config['height']
+width = config['width']
+output_height = config['output_height']
+output_width = config['output_width']
+num_classes = config['num_classes']
+batch_size = config['batch_size']
+lr = config['lr']
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-sam_image_folder = 'path_to_your_sam_image_folder/'
-sam_mask_folder = 'path_to_your_sam_mask_folder/'
-sam_test_image_folder = 'path_to_your_sam_test_image_folder/'
-sam_test_mask_folder = 'path_to_your_sam_test_mask_folder/'
+sam_image_folder = config['image_folder']
+sam_mask_folder = config['mask_folder']
+sam_test_image_folder = config['test_image_folder']
+sam_test_mask_folder = config['test_mask_folder']
 
 def get_data(image_folder, mask_folder, test_image_folder, test_mask_folder, processor_name="sam_base_vit", batch_size=2):
     large_images = load_image_stack(image_folder)
@@ -71,8 +74,11 @@ def get_model(model_name = "sam_base_vit",weight = None):
     return model
         
 
-train_dataloader, test_dataloader = get_data(sam_image_folder, sam_mask_folder, sam_test_image_folder, sam_test_mask_folder) # you can set batch_size here
-sam_model = get_model(model_name = "sam_base_vit")
+process_name = config['process_name']
+model_name = config['sam_model_name']
+weight = config['sam_weight']
+train_dataloader, test_dataloader = get_data(sam_image_folder=sam_image_folder, sam_mask_folder=sam_mask_folder, sam_test_image_folder=sam_test_image_folder, sam_test_mask_folder=sam_test_mask_folder,batch_size=batch_size,process_name=process_name)
+sam_model = get_model(model_name = model_name)
 sam_model = sam_model.to(device)
 
 student_model = get_segnet_model()
@@ -159,7 +165,7 @@ def validate(student_model, sam_model, loader, criterion, contrastive_loss_fn, d
             ground_truth_mask_resized = ground_truth_mask_resized.unsqueeze(1)
             
             teacher_outputs = sam_model(pixel_values).pred_masks
-            teacher_outputs = teacher_outputs[:, :, 0, :, :]  # 选择其中一个预测
+            teacher_outputs = teacher_outputs[:, :, 0, :, :]  
             student_outputs = student_model(pixel_values)
             student_outputs_resized = nn.functional.interpolate(student_outputs, size=(output_height, output_width), mode='bilinear', align_corners=False)
             
@@ -188,10 +194,11 @@ class DummyOptimizer:
     def step(self):
         pass
 
-pretrain_epochs = 100
-gan_train_epochs = 100
+in_channels = config['in_channels']
+pretrain_epochs = config['pretrain_epochs']
+gan_train_epochs = config['gan_train_epochs']
 criterion = DiceCELoss(to_onehot_y=True, softmax=True)
-discriminator = PretrainedDiscriminator(in_channels=1)
+discriminator = PretrainedDiscriminator(in_channels=in_channels)
 discriminator.to(device)
 optimizer_G = optim.Adam(student_model.parameters(), lr=lr)
 optimizer_tmp = DummyOptimizer()
