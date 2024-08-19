@@ -22,20 +22,23 @@ from scipy import ndimage
 import cv2
 from torchmetrics.classification import BinaryAUROC
 import torch.nn.functional as F
+import yaml
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
-height = 1024
-width = 1024
-output_height = 256
-output_width = 256
-num_classes = 2
-batch_size = 4
-epochs = 100
+height = config['height']
+width = config['width']
+output_height = config['output_height']
+output_width = config['output_width']
+num_classes = config['num_classes']
+batch_size = config['batch_size']
+epochs = config['num_epochs']
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-sam_image_folder = 'path_to_your_sam_image_folder/'
-sam_mask_folder = 'path_to_your_sam_mask_folder/'
-sam_test_image_folder = 'path_to_your_sam_test_image_folder/'
-sam_test_mask_folder = 'path_to_your_sam_test_mask_folder/'
+sam_image_folder = config['image_folder']
+sam_mask_folder = config['mask_folder']
+sam_test_image_folder = config['test_image_folder']
+sam_test_mask_folder = config['test_mask_folder']
 
 def get_data(image_folder, mask_folder, test_image_folder, test_mask_folder, processor_name="sam_base_vit"):
     large_images = load_image_stack(image_folder)
@@ -70,18 +73,22 @@ def get_model(lr = 1e-5,model_name = "sam_base_vit",weight = None):
 
     return model
         
-
-train_dataloader, test_dataloader = get_data(sam_image_folder, sam_mask_folder, sam_test_image_folder, sam_test_mask_folder)
-sam_model = get_model(lr = 1e-5,model_name = "sam_base_vit")
+process_name = config['process_name']
+lr = config['lr']
+model_name = config['sam_model_name']
+weight = config['sam_weight']
+train_dataloader, test_dataloader = get_data(sam_image_folder=sam_image_folder, sam_mask_folder=sam_mask_folder, sam_test_image_folder=sam_test_image_folder, sam_test_mask_folder=sam_test_mask_folder,batch_size=batch_size,process_name=process_name)
+sam_model = get_model(lr = 1e-5,model_name = model_name)
 sam_model = sam_model.to(device)
 
 student_model = get_segnet_model()
 student_model = student_model.to(device)
+lr = config['lr']
 
 # calculate_metrics_batch = Loss_Metrics.calculate_metrics_batch
 # contrastive_loss = Loss_Metrics.contrastive_loss
 criterion = DiceCELoss(to_onehot_y=True, softmax=True)
-optimizer = optim.Adam(student_model.parameters(), lr=1e-4)
+optimizer = optim.Adam(student_model.parameters(), lr=lr)
 
 def train(student_model, sam_model, loader, criterion, contrastive_loss_fn, optimizer, device):
     student_model.train()
@@ -170,7 +177,6 @@ def validate(student_model, sam_model, loader, criterion, contrastive_loss_fn, d
     
     return epoch_loss, metrics
 
-epochs = 200
 for epoch in range(epochs):
     print(f"Epoch {epoch+1}/{epochs}")
     
