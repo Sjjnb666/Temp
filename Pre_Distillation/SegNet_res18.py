@@ -1,7 +1,7 @@
 import torchvision.models as models
 from torchvision.models import VGG16_Weights
 import torch.nn as nn
-
+import torch
 class SegNet(nn.Module):
     def __init__(self, num_classes=2):
         super(SegNet, self).__init__()
