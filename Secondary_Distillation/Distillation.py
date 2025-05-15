@@ -111,7 +111,9 @@ def finetune(student_model, sam_model, discriminator, loader, criterion, contras
         student_outputs = student_model(pixel_values)
         student_outputs = student_outputs.float()
         student_outputs_resized = nn.functional.interpolate(student_outputs, size=(output_height, output_width), mode='bilinear', align_corners=False)
-        student_outputs_max = torch.argmax(student_outputs_resized, dim=1, keepdim=True)
+        max_values, max_indices = torch.max(student_outputs_softmax, dim=1, keepdim=True)
+        one_hot = torch.zeros_like(student_outputs_softmax).scatter_(1, max_indices, 1)
+        student_outputs_max = (one_hot * student_outputs_softmax).sum(dim=1, keepdim=True)
         student_outputs_max = student_outputs_max.float()
         student_outputs_sigmoid = torch.sigmoid(student_outputs_max / temperature_kd)
         
